@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>Capstone guide • TYLET style</title>
+    <link rel="icon" href="https://wxyzofficial.sirv.com/CAPSTONE/capstoneflow.png">
+    <!-- Roboto font + modern reset & icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase modular CDN (v9) -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+    <style>
+        /* ---------- GLOBAL TYLET STYLE ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f5fa 0%, #e9f0f5 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -8px rgba(0,20,30,0.2), 0 4px 12px rgba(255,255,255,0.4) inset;
+            border: 1px solid rgba(255,255,255,0.6);
+            padding: 2rem;
+            width: 100%;
+            max-width: 420px;
+            transition: all 0.25s ease;
+        }
+        h1, h2, h3 {
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            color: #1e2f4d;
+        }
+        h1 { font-size: 2.2rem; font-weight: 300; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.6rem; font-weight: 400; margin-bottom: 1.5rem; border-left: 5px solid #3b7fbd; padding-left: 1rem; }
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #1e3b5c;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.3px;
+        }
+        input, .modern-input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(255,255,255,0.7);
+            border: 1.5px solid rgba(59, 127, 189, 0.2);
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+            box-shadow: 0 6px 12px -8px rgba(0,32,64,0.2);
+        }
+        input:focus {
+            border-color: #3b7fbd;
+            background: white;
+            box-shadow: 0 8px 18px -10px #1e4f7a;
+        }
+        button, .btn {
+            background: #1e3b5c;
+            color: white;
+            border: none;
+            padding: 1rem 1.8rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 8px 16px -8px #0b1f30;
+            transition: all 0.15s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        button:hover {
+            background: #2b4e75;
+            transform: scale(1.01);
+            box-shadow: 0 12px 22px -12px #0f2a40;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #1e3b5c;
+            color: #1e3b5c;
+            box-shadow: none;
+            font-weight: 600;
+        }
+        .btn-outline:hover {
+            background: #e5eef8;
+            transform: none;
+        }
+        .flex-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .mt-2 { margin-top: 1.5rem; }
+        .text-center { text-align: center; }
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #57758c;
+            margin: 1.8rem 0;
+        }
+        .divider-line { flex:1; height:1px; background: rgba(59,127,189,0.3); }
+        .toast-error {
+            background: #ffebee;
+            border-left: 6px solid #c62828;
+            color: #8b1e1e;
+            padding: 1rem 1.4rem;
+            border-radius: 40px;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 6px 14px rgba(198,40,40,0.15);
+            backdrop-filter: blur(4px);
+        }
+        .toast-success {
+            background: #e6f7e6;
+            border-left: 6px solid #2e7d32;
+            color: #1b5e20;
+        }
+        .small-note {
+            color: #345d7e;
+            font-size: 0.85rem;
+            margin-top: 0.8rem;
+        }
+        a {
+            color: #1e5b9e;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        i { margin-right: 0.5rem; }
+        .google-btn {
+            background: #1e3b5c;
+            color: #ffffff;
+            border: 1px solid #bdd4e7;
+            box-shadow: 0 4px 10px -6px #1f3a57;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .google-btn i { color: #dd4b39; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+    <div class="glass-card" id="login-ui">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 0.5rem;">
+            <!-- <i class="fas fa-gem" style="font-size: 2.5rem; color: #1e3f60;"></i> -->
+            <h1 style="margin-bottom:0;">capstone.<span style="font-weight:700;">flow</span></h1>
+        </div>
+        <p style="color:#2f5577; margin-bottom: 2rem;">guide · research · defend</p>
+
+        <!-- dynamic alerts appear here -->
+        <div id="auth-alert"></div>
+
+        <!-- login / signup tabs simulated via inline state (js will control) -->
+        <div id="login-panel">
+            <h3 style="font-weight:400; margin-bottom:1.2rem;"><i class="fas fa-sign-in-alt"></i> sign in</h3>
+            <div class="input-group">
+                <label>email</label>
+                <input type="email" id="email" placeholder="student@university.edu" autocomplete="email">
+            </div>
+            <div class="input-group">
+                <label>password</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <button id="login-btn"><i class="fas fa-arrow-right-to-bracket"></i> sign in</button>
+            <div class="flex-row mt-2" style="justify-content:center;">
+                <button class="btn-outline" id="show-signup" style="padding:0.8rem 1.5rem; width:auto;"><i class="fas fa-user-plus"></i> create account</button>
+            </div>
+        </div>
+
+        <div id="signup-panel" style="display:none;">
+            <h3 style="font-weight:400; margin-bottom:1.2rem;"><i class="fas fa-user-plus"></i> sign up</h3>
+            <div class="input-group">
+                <label>full name</label>
+                <input type="text" id="fullName" placeholder="John Steven Macapañas" autocomplete="name">
+            </div>
+            <div class="input-group">
+                <label>email</label>
+                <input type="email" id="signup-email" placeholder="alex@university.edu">
+            </div>
+            <div class="input-group">
+                <label>password (min 6)</label>
+                <input type="password" id="signup-password" placeholder="min 6 characters">
+            </div>
+            <button id="signup-btn"><i class="fas fa-check"></i> register</button>
+            <div class="flex-row mt-2" style="justify-content:center;">
+                <button class="btn-outline" id="back-to-login" style="padding:0.8rem 1.5rem; width:auto;"><i class="fas fa-chevron-left"></i> back to sign in</button>
+            </div>
+        </div>
+
+        <div class="divider">
+            <span class="divider-line"></span>
+            <span style="font-size:0.9rem;">or</span>
+            <span class="divider-line"></span>
+        </div>
+        <button class="google-btn" id="googleLoginBtn"><i class="fab fa-google"></i> continue with Google</button>
+        <p class="small-note text-center"><i class="far fa-lightbulb"></i> Made with ❤️ by Steven Macapañas</p>
+    </div>
+
+    <script type="module">
+        // ----------------- Firebase init (modular) -----------------
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword, 
+            createUserWithEmailAndPassword, 
+            signInWithPopup, 
+            GoogleAuthProvider,
+            onAuthStateChanged,
+            signOut
+        } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc,
+            serverTimestamp 
+        } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_I-btjV5HIYx5Yiig5Gxuj52hZXnCRwI",
+            authDomain: "capstone-48837.firebaseapp.com",
+            projectId: "capstone-48837",
+            storageBucket: "capstone-48837.firebasestorage.app",
+            messagingSenderId: "111314845763",
+            appId: "1:111314845763:web:2821221fd9a75cdc7254f6",
+            measurementId: "G-SZTCPKV904"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // DOM elements
+        const alertBox = document.getElementById('auth-alert');
+        const loginPanel = document.getElementById('login-panel');
+        const signupPanel = document.getElementById('signup-panel');
+        const showSignupBtn = document.getElementById('show-signup');
+        const backToLoginBtn = document.getElementById('back-to-login');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const googleBtn = document.getElementById('googleLoginBtn');
+        const emailIn = document.getElementById('email');
+        const passIn = document.getElementById('password');
+        const signupName = document.getElementById('fullName');
+        const signupEmail = document.getElementById('signup-email');
+        const signupPass = document.getElementById('signup-password');
+
+        // helper: show error toast (or success)
+        function showAlert(message, isSuccess = false) {
+            alertBox.innerHTML = `<div class="toast-error ${isSuccess ? 'toast-success' : ''}"><i class="fas ${isSuccess ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> ${message}</div>`;
+        }
+
+        function clearAlert() { alertBox.innerHTML = ''; }
+
+        // redirect if already logged in
+        onAuthStateChanged(auth, (user) => {
+            if (user) window.location.href = 'main.html';
+        });
+
+        // toggle panels
+        showSignupBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginPanel.style.display = 'none';
+            signupPanel.style.display = 'block';
+            clearAlert();
+        });
+        backToLoginBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            signupPanel.style.display = 'none';
+            loginPanel.style.display = 'block';
+            clearAlert();
+        });
+
+        // save user to firestore after creation (users collection)
+        async function createUserProfile(user, fullName = null, providerType = 'password') {
+            const uid = user.uid;
+            const userRef = doc(db, 'users', uid);
+            const displayName = fullName || user.displayName || 'Student';
+            await setDoc(userRef, {
+                uid: uid,
+                fullName: displayName,
+                email: user.email,
+                provider: providerType,
+                createdAt: serverTimestamp()
+            }, { merge: true });
+        }
+
+        // email signup
+        signupBtn.addEventListener('click', async () => {
+            const name = signupName.value.trim();
+            const email = signupEmail.value.trim();
+            const password = signupPass.value;
+            if (!name || !email || password.length < 6) {
+                showAlert('name, valid email, password min 6 chars');
+                return;
+            }
+            clearAlert();
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                await createUserProfile(cred.user, name, 'password');
+                // onAuthStateChanged will redirect
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+
+        // email login
+        loginBtn.addEventListener('click', async () => {
+            const email = emailIn.value.trim();
+            const password = passIn.value;
+            if (!email || !password) { showAlert('enter email & password'); return; }
+            clearAlert();
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // redirect
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+
+        // google login
+        googleBtn.addEventListener('click', async () => {
+            try {
+                const result = await signInWithPopup(auth, provider);
+                await createUserProfile(result.user, result.user.displayName, 'google');
+            } catch (err) {
+                showAlert(err.message);
+            }
+        });
+
+        // quick logout if on index but logged in (handled above)
+    </script>
+</body>
+</html>

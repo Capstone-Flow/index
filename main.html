@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>capstone flow · dashboard</title>
+    <link rel="icon" href="https://wxyzofficial.sirv.com/CAPSTONE/capstoneflow.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Firebase modular SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+    <style>
+        /* ---------- TYLET GLOBAL ---------- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body {
+            background: #e7eef4;
+            min-height: 100vh;
+            display: flex;
+            color: #1a2f44;
+        }
+        /* sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 8px 0 20px -12px #1e3b5c;
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+            border-radius: 0 32px 32px 0;
+        }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.6rem;
+            font-weight: 300;
+            padding-left: 0.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.9rem 1.2rem;
+            border-radius: 40px;
+            margin: 0.2rem 0;
+            color: #1d3f5e;
+            font-weight: 450;
+            transition: 0.15s;
+            cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(59,127,189,0.2);
+            backdrop-filter: blur(5px);
+            color: #0c2c44;
+        }
+        .nav-item i { width: 24px; font-size: 1.3rem; }
+        .main-content {
+            flex: 1;
+            padding: 2rem 2.5rem;
+            overflow-y: auto;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(8px);
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            box-shadow: 0 6px 14px -10px #1f3b54;
+        }
+        .user-profile {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .logout-btn {
+            background: transparent;
+            border: 2px solid #1e3f60;
+            color: #1e3f60;
+            border-radius: 40px;
+            padding: 0.5rem 1.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .logout-btn:hover { background: #1e3f60; color: white; }
+
+        /* cards */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(10px);
+            border-radius: 28px;
+            padding: 1.6rem 1.5rem;
+            box-shadow: 0 15px 30px -15px #264b6b;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 400;
+            margin: 2rem 0 1rem 0;
+            border-left: 6px solid #3b7fbd;
+            padding-left: 1.2rem;
+        }
+        .guide-step {
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(4px);
+            border-radius: 30px;
+            padding: 1.2rem 1.8rem;
+            margin-bottom: 0.7rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .step-indicator {
+            width: 40px; height: 40px;
+            background: #1e3b5c;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            font-weight: 700;
+        }
+        .completed-badge {
+            background: #2e7d32; color: white; border-radius: 40px; padding: 0.2rem 1rem; font-size: 0.8rem;
+        }
+        .hamburger { display: none; }
+        @media (max-width: 700px) {
+            .sidebar { position: fixed; left: -260px; z-index: 100; height: 100%; transition: left 0.2s; }
+            .sidebar.open { left: 0; }
+            .hamburger { display: block; position: fixed; top: 20px; left: 20px; z-index: 200; background: white; padding: 0.8rem 1.2rem; border-radius: 40px; box-shadow: 0 4px 12px gray; }
+            .main-content { margin-left: 0; padding: 5rem 1rem 1rem 1rem; }
+        }
+        /* modern form controls */
+        .modern-input, input:not([type=checkbox]), textarea, select {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(255,255,255,0.8);
+            border: 1.5px solid rgba(59,127,189,0.3);
+            border-radius: 50px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+        textarea { border-radius: 30px; min-height: 100px; resize: vertical; }
+        .modern-input:focus, input:focus, textarea:focus, select:focus {
+            border-color: #1e3f60;
+            background: white;
+            box-shadow: 0 8px 18px -10px #1e4f7a;
+        }
+        .btn-primary {
+            background: #1e3b5c;
+            color: white;
+            border: none;
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 6px 14px -8px #0f2a40;
+            transition: all 0.15s;
+            margin-right: 0.5rem;
+        }
+        .btn-primary:hover { background: #2b4e75; }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #1e3f60;
+            color: #1e3f60;
+            border-radius: 50px;
+            padding: 0.9rem 2rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-outline:hover { background: #e3eef9; }
+        .flex-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .rrl-item, .milestone-item, .defense-card {
+            background: white;
+            border-radius: 30px;
+            padding: 1.2rem 1.8rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 6px 14px -10px #1f3b54;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .delete-btn {
+            background: none; border: none; color: #b0003a; font-size: 1.4rem; cursor: pointer;
+        }
+        .chapter-tabs button {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid #abc0d0;
+            padding: 0.8rem 1.5rem;
+            border-radius: 40px;
+            margin-right: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .chapter-tabs .active-chapter {
+            background: #1e3b5c; color: white; border-color: #1e3b5c;
+        }
+        /* field study grid */
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+        .field-chip {
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(59,127,189,0.4);
+            padding: 0.8rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.1s;
+            text-align: center;
+        }
+        .field-chip:hover {
+            background: rgba(59,127,189,0.2);
+            border-color: #1e3f60;
+        }
+        .field-chip.selected {
+            background: #1e3b5c;
+            color: white;
+            border-color: #1e3b5c;
+        }
+        .quotation-note {
+            background: rgba(255,255,255,0.4);
+            border-radius: 50px;
+            padding: 1rem 1.8rem;
+            margin: 1rem 0 2rem 0;
+            font-style: italic;
+            border-left: 6px solid #3b7fbd;
+        }
+    </style>
+</head>
+<body>
+    <div class="hamburger" id="menuToggle"><i class="fas fa-bars"></i> menu</div>
+    <div class="sidebar" id="sidebar">
+        <div class="logo-area"></i> Capstone<span style="font-weight:700;">Flow</span></div>
+        <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i> dashboard</div>
+        <div class="nav-item" data-page="project"><i class="fas fa-folder-open"></i> project setup</div>
+        <div class="nav-item" data-page="guide"><i class="fas fa-list-check"></i> step guide</div>
+        <div class="nav-item" data-page="chapter"><i class="fas fa-book-open"></i> chapter builder</div>
+        <div class="nav-item" data-page="rrl"><i class="fas fa-newspaper"></i> RRL manager</div>
+        <div class="nav-item" data-page="gantt"><i class="fas fa-chart-gantt"></i> timeline</div>
+        <div class="nav-item" data-page="diagram"><i class="fas fa-diagram-project"></i> diagrams</div>
+        <div class="nav-item" data-page="defense"><i class="fas fa-comment-dots"></i> defense prep</div>
+        <div class="nav-item" data-page="resources"><i class="fas fa-link"></i> resources</div>
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <!-- top bar with user -->
+        <div class="top-bar">
+            <div id="greeting">capstone project</div>
+            <div class="user-profile">
+                <span id="userNameDisplay"></span>
+                <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> logout</button>
+            </div>
+        </div>
+
+        <!-- dynamic page content injects here -->
+        <div id="pageContent">loading dashboard...</div>
+    </div>
+
+    <!-- toast container -->
+    <div id="toastMsg" style="position:fixed; bottom:20px; right:20px; z-index:9999;"></div>
+
+    <script type="module">
+        // ---------- firebase ----------
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
+        import { getFirestore, doc, setDoc, collection, serverTimestamp, query, where, getDocs, addDoc, updateDoc, deleteDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC_I-btjV5HIYx5Yiig5Gxuj52hZXnCRwI",
+            authDomain: "capstone-48837.firebaseapp.com",
+            projectId: "capstone-48837",
+            storageBucket: "capstone-48837.firebasestorage.app",
+            messagingSenderId: "111314845763",
+            appId: "1:111314845763:web:2821221fd9a75cdc7254f6",
+            measurementId: "G-SZTCPKV904"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // state
+        let currentUser = null;
+        let currentProjectId = null;
+
+        // ui
+        const sidebar = document.getElementById('sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        menuToggle?.addEventListener('click', () => sidebar.classList.toggle('open'));
+        const pageContentDiv = document.getElementById('pageContent');
+        const userNameSpan = document.getElementById('userNameDisplay');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const navItems = document.querySelectorAll('.nav-item');
+
+        function showToast(msg, isGood = true) {
+            const toast = document.getElementById('toastMsg');
+            toast.innerHTML = `<div style="background:${isGood?'#1e3b5c':'#b33'}; color:white; padding:1rem 2rem; border-radius:60px; box-shadow:0 6px 18px black;">${msg}</div>`;
+            setTimeout(() => toast.innerHTML = '', 3000);
+        }
+
+        // auth guard
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { window.location.href = 'index.html'; return; }
+            currentUser = user;
+            userNameSpan.innerText = user.displayName || user.email?.split('@')[0] || 'student';
+            await setDoc(doc(db, 'users', user.uid), { email: user.email, lastSeen: serverTimestamp() }, { merge: true });
+
+            // get or create a single project (no sample data except empty project)
+            const projQuery = query(collection(db, 'projects'), where('ownerId', '==', user.uid));
+            const snap = await getDocs(projQuery);
+            if (snap.empty) {
+                const projRef = await addDoc(collection(db, 'projects'), {
+                    ownerId: user.uid,
+                    title: '',
+                    fieldOfStudy: '',  // new field
+                    category: '',
+                    description: '',
+                    chosenSDLC: '',
+                    status: 'draft',
+                    createdAt: serverTimestamp(),
+                    updatedAt: serverTimestamp()
+                });
+                currentProjectId = projRef.id;
+            } else {
+                currentProjectId = snap.docs[0].id;
+            }
+            loadPage('dashboard');
+        });
+
+        // navigation
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                navItems.forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                const page = item.dataset.page;
+                loadPage(page);
+                if (window.innerWidth < 700) sidebar.classList.remove('open');
+            });
+        });
+
+        async function loadPage(page) {
+            if (!currentUser || !currentProjectId) { pageContentDiv.innerHTML = 'loading...'; return; }
+            let html = '';
+            if (page === 'dashboard') html = await renderDashboard();
+            else if (page === 'project') html = await renderProjectSetup();
+            else if (page === 'guide') html = await renderGuide();
+            else if (page === 'chapter') html = await renderChapterBuilder();
+            else if (page === 'rrl') html = await renderRRL();
+            else if (page === 'gantt') html = await renderGantt();
+            else if (page === 'diagram') html = await renderDiagramHelper();
+            else if (page === 'defense') html = await renderDefense();
+            else if (page === 'resources') html = await renderResources();
+            else html = '<p>select a page</p>';
+            pageContentDiv.innerHTML = html;
+        }
+
+        // ---------- DASHBOARD ----------
+        async function renderDashboard() {
+            // load counts from firestore (no sample)
+            const checklistSnap = await getDocs(collection(db, 'projects', currentProjectId, 'checklists'));
+            const total = checklistSnap.size;
+            const completed = checklistSnap.docs.filter(d => d.data().completed).length;
+            const percent = total ? Math.round((completed/total)*100) : 0;
+
+            const rrlSnap = await getDocs(collection(db, 'projects', currentProjectId, 'rrl'));
+            const msSnap = await getDocs(collection(db, 'projects', currentProjectId, 'milestones'));
+
+            return `
+                <h2 class="section-title"><i class="fas fa-gauge-high"></i> dashboard</h2>
+                <div class="grid-3">
+                    <div class="stat-card"><i class="fas fa-check-circle" style="font-size:2rem;"></i> <h3>${completed}/${total} steps</h3><p>checklist progress</p><div style="height:8px; background:#cfdbe8; border-radius:40px; margin-top:1rem;"><div style="width:${percent}%; background:#1e3b5c; height:8px; border-radius:40px;"></div></div></div>
+                    <div class="stat-card"><i class="fas fa-book"></i> <h3>RRL entries</h3><p id="rrlCount">${rrlSnap.size}</p></div>
+                    <div class="stat-card"><i class="fas fa-list"></i> <h3>milestones</h3><p id="msCount">${msSnap.size}</p></div>
+                </div>
+                <p><i class="fas fa-arrow-right"></i> continue: setup your project in <strong>project setup</strong></p>
+            `;
+        }
+
+        // ---------- PROJECT SETUP with FIELD OF STUDY SELECTOR ----------
+        async function renderProjectSetup() {
+            const projDoc = await getDoc(doc(db, 'projects', currentProjectId));
+            const data = projDoc.data() || {};
+            
+            // List of 15 field-of-study options
+            const fieldOptions = [
+                'Education Technology (EdTech)',
+                'Agriculture Technology (AgriTech)',
+                'Fisheries & Marine Technology',
+                'Healthcare & Medical Systems',
+                'Disaster Risk Reduction & Management (DRRM)',
+                'Local Government (e-Governance)',
+                'Tourism & Cultural Heritage',
+                'Business & MSME Solutions',
+                'Environmental & Sustainability Systems',
+                'Public Safety & Security',
+                'Transportation & Mobility',
+                'PWD & Accessibility Technology',
+                'Financial Technology (FinTech)',
+                'Information Dissemination & Communication',
+                'Smart Campus / Smart University Systems'
+            ];
+            
+            // Build chips with selected state
+            let chipsHtml = '';
+            fieldOptions.forEach(opt => {
+                const selected = (data.fieldOfStudy === opt) ? 'selected' : '';
+                chipsHtml += `<div class="field-chip ${selected}" data-field="${opt}">${opt}</div>`;
+            });
+
+            return `
+                <h2 class="section-title"><i class="fas fa-folder-open"></i> project setup</h2>
+                
+                <!-- Field of study selector with inspirational note -->
+                <div class="stat-card">
+                    <h3>🔍 field of study / domain</h3>
+                    <div class="quotation-note">
+                        <i class="fas fa-quote-left" style="color:#3b7fbd;"></i> 
+                        You may pick an idea from the list below, or choose your own topic outside these suggestions — 
+                        the goal is to find something you're passionate about.
+                        <i class="fas fa-quote-right" style="color:#3b7fbd;"></i>
+                    </div>
+                    
+                    <div class="field-grid" id="fieldChipsContainer">
+                        ${chipsHtml}
+                    </div>
+                    
+                    <!-- Hidden input to store selected field, also allow manual entry -->
+                    <label>or type your own field of study</label>
+                    <input class="modern-input" id="customField" value="${data.fieldOfStudy && !fieldOptions.includes(data.fieldOfStudy) ? data.fieldOfStudy : ''}" placeholder="e.g., Space Technology, Sports Analytics ...">
+                    <p style="margin-top:-0.5rem; font-size:0.85rem; color:#346392;"><i class="far fa-lightbulb"></i> selecting a chip above will copy it here, but you can edit freely.</p>
+                </div>
+
+                <br>
+
+                <!-- existing project setup fields -->
+                <div class="stat-card">
+                    <label>project title</label>
+                    <input class="modern-input" id="projTitle" value="${data.title || ''}" placeholder="e.g. Smart Campus Navigation">
+
+                    <label>category</label>
+                    <select id="projCategory" class="modern-input">
+                        <option value="Software" ${data.category==='Software'?'selected':''}>Software</option>
+                        <option value="IoT" ${data.category==='IoT'?'selected':''}>IoT</option>
+                        <option value="Integrated" ${data.category==='Integrated'?'selected':''}>Integrated</option>
+                        <option value="Other" ${data.category==='Other'?'selected':''}>Other</option>
+                    </select>
+
+                    <label>description</label>
+                    <textarea id="projDesc" class="modern-input" placeholder="brief description">${data.description || ''}</textarea>
+
+                    <label>SDLC model</label>
+                    <select id="projSDLC" class="modern-input">
+                        <option value="Agile" ${data.chosenSDLC==='Agile'?'selected':''}>Agile</option>
+                        <option value="Waterfall" ${data.chosenSDLC==='Waterfall'?'selected':''}>Waterfall</option>
+                        <option value="Spiral" ${data.chosenSDLC==='Spiral'?'selected':''}>Spiral</option>
+                        <option value="RAD" ${data.chosenSDLC==='RAD'?'selected':''}>RAD</option>
+                    </select>
+
+                    <label>status</label>
+                    <select id="projStatus" class="modern-input">
+                        <option value="draft" ${data.status==='draft'?'selected':''}>draft</option>
+                        <option value="ongoing" ${data.status==='ongoing'?'selected':''}>ongoing</option>
+                        <option value="ready-for-defense" ${data.status==='ready-for-defense'?'selected':''}>ready for defense</option>
+                        <option value="completed" ${data.status==='completed'?'selected':''}>completed</option>
+                    </select>
+
+                    <div class="flex-row">
+                        <button class="btn-primary" id="saveProjectBtn"><i class="fas fa-save"></i> save project</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---------- STEP GUIDE (checklist dynamic) ----------
+        async function renderGuide() {
+            const stepsSnap = await getDocs(collection(db, 'projects', currentProjectId, 'checklists'));
+            let stepsHtml = '';
+            const stepLabels = ['Pick topic','Do research','Write proposal','Prepare title defense','Chapter 1','Chapter 2','Chapter 3','Chapter 4','Chapter 5'];
+            for (let label of stepLabels) {
+                let existing = stepsSnap.docs.find(d => d.data().label === label);
+                let completed = existing ? existing.data().completed : false;
+                let id = existing ? existing.id : null;
+                stepsHtml += `
+                    <div class="guide-step" data-id="${id}" data-label="${label}">
+                        <span class="step-indicator">${stepLabels.indexOf(label)+1}</span>
+                        <span style="flex:1">${label}</span>
+                        <input type="checkbox" ${completed ? 'checked' : ''} class="step-checkbox" data-id="${id}" data-label="${label}">
+                        ${completed ? '<span class="completed-badge">done</span>' : '<span class="completed-badge" style="background:#7f8fa0;">todo</span>'}
+                    </div>
+                `;
+            }
+            return `
+                <h2 class="section-title"><i class="fas fa-list-check"></i> step guide</h2>
+                ${stepsHtml}
+                <p><i>✔ check/uncheck to update progress</i></p>
+            `;
+        }
+
+        // ---------- CHAPTER BUILDER (autosave) ----------
+        async function renderChapterBuilder() {
+            // Load saved content for chapter 1 by default
+            const ch1Doc = await getDoc(doc(db, 'projects', currentProjectId, 'chapters', 'ch1'));
+            const ch1Content = ch1Doc.exists() ? ch1Doc.data().content : '';
+            
+            return `
+                <h2 class="section-title"><i class="fas fa-book-open"></i> chapter builder 1‑5</h2>
+                <div class="stat-card">
+                    <div class="chapter-tabs" id="chapterTabs">
+                        <button data-ch="1" class="active-chapter">1</button>
+                        <button data-ch="2">2</button>
+                        <button data-ch="3">3</button>
+                        <button data-ch="4">4</button>
+                        <button data-ch="5">5</button>
+                    </div>
+                    <br>
+                    <div id="chapterEditor">
+                        <textarea id="chapterContent" class="modern-input" placeholder="write your chapter content..." style="min-height:200px;">${ch1Content.replace(/</g, '&lt;')}</textarea>
+                        <p><span id="autosaveIndicator"></span></p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ---------- RRL MANAGER ----------
+        async function renderRRL() {
+            const rrlSnap = await getDocs(collection(db, 'projects', currentProjectId, 'rrl'));
+            let items = '';
+            rrlSnap.forEach(doc => {
+                const d = doc.data();
+                items += `<div class="rrl-item" data-id="${doc.id}">
+                    <div><strong>${d.title || 'no title'}</strong> (${d.year || 'n.d.'})<br>${d.authors || ''}<br><small>${d.keyFindings || ''}</small></div>
+                    <button class="delete-btn" data-id="${doc.id}" data-collection="rrl"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+            return `
+                <h2 class="section-title"><i class="fas fa-newspaper"></i> RRL manager</h2>
+                <div class="stat-card">
+                    <input class="modern-input" id="rrlTitle" placeholder="title">
+                    <input class="modern-input" id="rrlAuthors" placeholder="authors">
+                    <input class="modern-input" id="rrlYear" placeholder="year">
+                    <input class="modern-input" id="rrlLink" placeholder="link (optional)">
+                    <textarea class="modern-input" id="rrlFindings" placeholder="key findings"></textarea>
+                    <textarea class="modern-input" id="rrlNotes" placeholder="relevance notes"></textarea>
+                    <button class="btn-primary" id="addRRLbtn"><i class="fas fa-plus"></i> add reference</button>
+                </div>
+                <br>
+                <div id="rrlList">${items || '<p>no entries yet</p>'}</div>
+            `;
+        }
+
+        // ---------- GANTT / TIMELINE ----------
+        async function renderGantt() {
+            const msSnap = await getDocs(collection(db, 'projects', currentProjectId, 'milestones'));
+            let list = '';
+            msSnap.forEach(d => {
+                const data = d.data();
+                list += `<div class="milestone-item" data-id="${d.id}">
+                    <span><b>${data.taskName || 'task'}</b> ${data.startDate || ''} → ${data.endDate || ''} (${data.status || 'todo'})</span>
+                    <button class="delete-btn" data-id="${d.id}" data-collection="milestones"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+            return `
+                <h2 class="section-title"><i class="fas fa-chart-gantt"></i> timeline / gantt</h2>
+                <div class="stat-card">
+                    <input class="modern-input" id="msTask" placeholder="task name">
+                    <div class="flex-row">
+                        <input type="date" id="msStart" class="modern-input" style="flex:1">
+                        <input type="date" id="msEnd" class="modern-input" style="flex:1">
+                    </div>
+                    <select id="msStatus" class="modern-input">
+                        <option value="todo">todo</option><option value="doing">doing</option><option value="done">done</option>
+                    </select>
+                    <button class="btn-primary" id="addMilestoneBtn"><i class="fas fa-plus"></i> add milestone</button>
+                </div>
+                <br>
+                <div id="milestoneList">${list || '<p>no milestones</p>'}</div>
+            `;
+        }
+
+        // ---------- DIAGRAM HELPER (FULLY FUNCTIONAL) ----------
+        async function renderDiagramHelper() {
+            // Load saved diagram contents
+            const diagramIds = ['dfd0', 'dbTables', 'dataDict', 'screenDesign'];
+            const contents = {};
+            
+            for (const id of diagramIds) {
+                const docRef = doc(db, 'projects', currentProjectId, 'diagrams', id);
+                const docSnap = await getDoc(docRef);
+                contents[id] = docSnap.exists() ? docSnap.data().content : '';
+            }
+
+            return `
+                <h2 class="section-title"><i class="fas fa-diagram-project"></i> diagram templates</h2>
+                
+                <!-- DFD Level 0 -->
+                <div class="stat-card">
+                    <h3>📊 DFD Level 0 (Context Diagram)</h3>
+                    <p><i>external entities, main process, data flows</i></p>
+                    <br>
+                    <textarea id="dfd0Content" class="modern-input" placeholder="Describe your context diagram here..." style="min-height:120px;">${contents.dfd0.replace(/</g, '&lt;')}</textarea>
+                    <button class="btn-primary" id="saveDfd0Btn"><i class="fas fa-save"></i> save DFD</button>
+                </div>
+                <br>
+                
+                <!-- Database Tables Template -->
+                <div class="stat-card">
+                    <h3>📁 Database Tables Template</h3>
+                    <p><i>table_name (field1, field2, field3, ...)</i></p>
+                    <br>
+                    <textarea id="dbTablesContent" class="modern-input" placeholder="List your database tables and fields..." style="min-height:120px;">${contents.dbTables.replace(/</g, '&lt;')}</textarea>
+                    <button class="btn-primary" id="saveDbTablesBtn"><i class="fas fa-save"></i> save tables</button>
+                </div>
+                <br>
+                
+                <!-- Data Dictionary Template -->
+                <div class="stat-card">
+                    <h3>📋 Data Dictionary Template</h3>
+                    <p><i>field | type | length | description | example</i></p>
+                    <br>
+                    <textarea id="dataDictContent" class="modern-input" placeholder="Define each field in detail..." style="min-height:120px;">${contents.dataDict.replace(/</g, '&lt;')}</textarea>
+                    <button class="btn-primary" id="saveDataDictBtn"><i class="fas fa-save"></i> save dictionary</button>
+                </div>
+                <br>
+                
+                <!-- Screen Design Checklist -->
+                <div class="stat-card">
+                    <h3>🖥️ Screen Design Checklist</h3>
+                    <p><i>list all UI screens/modules your project needs</i></p>
+                    <br>
+                    <textarea id="screenDesignContent" class="modern-input" placeholder="e.g., Login screen, Dashboard, Add record form, Reports page..." style="min-height:120px;">${contents.screenDesign.replace(/</g, '&lt;')}</textarea>
+                    <button class="btn-primary" id="saveScreenDesignBtn"><i class="fas fa-save"></i> save checklist</button>
+                </div>
+            `;
+        }
+
+        // ---------- DEFENSE PREP ----------
+        async function renderDefense() {
+            const defSnap = await getDocs(collection(db, 'projects', currentProjectId, 'defensePrep'));
+            let cards = '';
+            defSnap.forEach(d => {
+                const data = d.data();
+                cards += `<div class="defense-card" data-id="${d.id}">
+                    <div><b>Q:</b> ${data.question || ''}<br><b>A:</b> ${data.suggestedAnswer || ''}</div>
+                    <button class="delete-btn" data-id="${d.id}" data-collection="defensePrep"><i class="fas fa-trash"></i></button>
+                </div>`;
+            });
+            return `
+                <h2 class="section-title"><i class="fas fa-comment-dots"></i> defense prep</h2>
+                <div class="stat-card">
+                    <input class="modern-input" id="defQuestion" placeholder="question">
+                    <textarea class="modern-input" id="defAnswer" placeholder="suggested answer"></textarea>
+                    <button class="btn-primary" id="addDefenseBtn"><i class="fas fa-save"></i> save card</button>
+                </div>
+                <br>
+                <div id="defenseList">${cards || '<p>no cards yet</p>'}</div>
+            `;
+        }
+
+        // ---------- RESOURCES ----------
+        async function renderResources() {
+            return `
+                <h2 class="section-title"><i class="fas fa-link"></i> resources</h2>
+                <div class="stat-card">
+                    <ul style="margin-left:2rem;">
+                        <li>📚 APA citation style</li>
+                        <li>⚙️ SDLC overview (Agile, Waterfall)</li>
+                        <li>🔍 research tips: use keywords, snowball method</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // ---- EVENT LISTENERS (delegation) -----
+        document.addEventListener('click', async (e) => {
+            // Handle field chip selection
+            if (e.target.closest('.field-chip')) {
+                const chip = e.target.closest('.field-chip');
+                const fieldValue = chip.dataset.field;
+                
+                // Deselect all chips
+                document.querySelectorAll('.field-chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+                
+                // Fill custom field input
+                const customInput = document.getElementById('customField');
+                if (customInput) customInput.value = fieldValue;
+            }
+
+            // Save project (including field of study)
+            if (e.target.closest('#saveProjectBtn')) {
+                const title = document.getElementById('projTitle')?.value;
+                const category = document.getElementById('projCategory')?.value;
+                const desc = document.getElementById('projDesc')?.value;
+                const sdlc = document.getElementById('projSDLC')?.value;
+                const status = document.getElementById('projStatus')?.value;
+                // Get field of study from custom input (which may have been set by chip)
+                const fieldOfStudy = document.getElementById('customField')?.value || '';
+                
+                if (!currentProjectId) return;
+                await updateDoc(doc(db, 'projects', currentProjectId), {
+                    title, 
+                    category, 
+                    description: desc, 
+                    chosenSDLC: sdlc, 
+                    status,
+                    fieldOfStudy,  // save the field of study
+                    updatedAt: serverTimestamp()
+                });
+                showToast('project updated ✓');
+            }
+
+            // Save DFD0 diagram
+            if (e.target.closest('#saveDfd0Btn')) {
+                const content = document.getElementById('dfd0Content')?.value;
+                await setDoc(doc(db, 'projects', currentProjectId, 'diagrams', 'dfd0'), {
+                    content: content,
+                    type: 'dfd-level0',
+                    updatedAt: serverTimestamp()
+                });
+                showToast('DFD diagram saved ✓');
+            }
+
+            // Save database tables
+            if (e.target.closest('#saveDbTablesBtn')) {
+                const content = document.getElementById('dbTablesContent')?.value;
+                await setDoc(doc(db, 'projects', currentProjectId, 'diagrams', 'dbTables'), {
+                    content: content,
+                    type: 'database-tables',
+                    updatedAt: serverTimestamp()
+                });
+                showToast('database tables saved ✓');
+            }
+
+            // Save data dictionary
+            if (e.target.closest('#saveDataDictBtn')) {
+                const content = document.getElementById('dataDictContent')?.value;
+                await setDoc(doc(db, 'projects', currentProjectId, 'diagrams', 'dataDict'), {
+                    content: content,
+                    type: 'data-dictionary',
+                    updatedAt: serverTimestamp()
+                });
+                showToast('data dictionary saved ✓');
+            }
+
+            // Save screen design
+            if (e.target.closest('#saveScreenDesignBtn')) {
+                const content = document.getElementById('screenDesignContent')?.value;
+                await setDoc(doc(db, 'projects', currentProjectId, 'diagrams', 'screenDesign'), {
+                    content: content,
+                    type: 'screen-design',
+                    updatedAt: serverTimestamp()
+                });
+                showToast('screen design checklist saved ✓');
+            }
+
+            // checklist checkbox toggle
+            if (e.target.classList.contains('step-checkbox')) {
+                const checkbox = e.target;
+                const id = checkbox.dataset.id;
+                const label = checkbox.dataset.label;
+                const completed = checkbox.checked;
+                if (id) {
+                    await updateDoc(doc(db, 'projects', currentProjectId, 'checklists', id), { completed, completedAt: completed ? serverTimestamp() : null });
+                } else {
+                    // create new checklist item if missing (should not happen but fallback)
+                    await addDoc(collection(db, 'projects', currentProjectId, 'checklists'), { label, completed, completedAt: completed ? serverTimestamp() : null });
+                }
+                showToast(`step marked ${completed ? 'done' : 'todo'}`);
+                loadPage('guide'); // refresh
+            }
+
+            // delete RRL / milestone / defense
+            if (e.target.closest('.delete-btn')) {
+                const btn = e.target.closest('.delete-btn');
+                const id = btn.dataset.id;
+                const col = btn.dataset.collection; // 'rrl', 'milestones', 'defensePrep'
+                if (id && col) {
+                    await deleteDoc(doc(db, 'projects', currentProjectId, col, id));
+                    showToast('deleted');
+                    loadPage(document.querySelector('.nav-item.active')?.dataset.page || 'dashboard');
+                }
+            }
+
+            // add RRL
+            if (e.target.closest('#addRRLbtn')) {
+                const title = document.getElementById('rrlTitle')?.value;
+                const authors = document.getElementById('rrlAuthors')?.value;
+                const year = document.getElementById('rrlYear')?.value;
+                const link = document.getElementById('rrlLink')?.value;
+                const findings = document.getElementById('rrlFindings')?.value;
+                const notes = document.getElementById('rrlNotes')?.value;
+                if (!title) { showToast('title required', false); return; }
+                await addDoc(collection(db, 'projects', currentProjectId, 'rrl'), {
+                    title, authors, year, link, keyFindings: findings, relevanceNotes: notes, dateAdded: serverTimestamp()
+                });
+                showToast('RRL added');
+                loadPage('rrl');
+            }
+
+            // add milestone
+            if (e.target.closest('#addMilestoneBtn')) {
+                const task = document.getElementById('msTask')?.value;
+                const start = document.getElementById('msStart')?.value;
+                const end = document.getElementById('msEnd')?.value;
+                const status = document.getElementById('msStatus')?.value;
+                if (!task) return;
+                await addDoc(collection(db, 'projects', currentProjectId, 'milestones'), {
+                    taskName: task, startDate: start, endDate: end, status, assignedTo: '', createdAt: serverTimestamp()
+                });
+                showToast('milestone added');
+                loadPage('gantt');
+            }
+
+            // add defense card
+            if (e.target.closest('#addDefenseBtn')) {
+                const q = document.getElementById('defQuestion')?.value;
+                const a = document.getElementById('defAnswer')?.value;
+                if (!q || !a) return;
+                await addDoc(collection(db, 'projects', currentProjectId, 'defensePrep'), {
+                    question: q, suggestedAnswer: a, evidenceLinks: [], lastUpdated: serverTimestamp()
+                });
+                showToast('defense card saved');
+                loadPage('defense');
+            }
+        });
+
+        // chapter tabs and autosave
+        document.addEventListener('change', async (e) => {
+            if (e.target.id === 'chapterContent') {
+                document.getElementById('autosaveIndicator').innerText = 'saving...';
+                const activeTab = document.querySelector('.chapter-tabs .active-chapter')?.innerText || '1';
+                await setDoc(doc(db, 'projects', currentProjectId, 'chapters', `ch${activeTab}`), {
+                    content: e.target.value, lastEditedAt: serverTimestamp()
+                }, { merge: true });
+                document.getElementById('autosaveIndicator').innerText = 'saved ✓';
+                setTimeout(() => document.getElementById('autosaveIndicator').innerText = '', 1500);
+            }
+        });
+
+        // Chapter tab switching with content loading
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('.chapter-tabs button')) {
+                const btn = e.target.closest('.chapter-tabs button');
+                document.querySelectorAll('.chapter-tabs button').forEach(b => b.classList.remove('active-chapter'));
+                btn.classList.add('active-chapter');
+                
+                // Load chapter content from Firestore
+                const ch = btn.innerText;
+                const docRef = doc(db, 'projects', currentProjectId, 'chapters', `ch${ch}`);
+                const docSnap = await getDoc(docRef);
+                const content = docSnap.exists() ? docSnap.data().content : '';
+                const textarea = document.getElementById('chapterContent');
+                if (textarea) textarea.value = content;
+            }
+        });
+
+        logoutBtn.addEventListener('click', async () => { await signOut(auth); window.location.href='index.html'; });
+    </script>
+</body>
+</html>
